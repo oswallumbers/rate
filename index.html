@@ -173,8 +173,7 @@
 
 
         <!-- ===== 5. Main App Page (Dashboard, Manage, History) ===== -->
-        <!-- **** THIS IS THE FIX **** -->
-        <!-- Added w-full and overflow-x-hidden to prevent horizontal scrolling -->
+        <!-- Added w-full and overflow-x-hidden -->
         <div id="main-page" class="page flex flex-col h-screen w-full overflow-x-hidden hidden">
             
             <!-- Header -->
@@ -203,9 +202,10 @@
                 <p>Please check your inbox to verify your email address. <button id="resend-verification-btn" class="font-bold underline hover:text-yellow-800">Resend verification email</button></p>
             </div>
 
-            <!-- Main Content Area -->
-            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-                <div class="max-w-7xl mx-auto">
+            <!-- **** THIS IS THE FIX **** -->
+            <!-- Added w-full to main and its child div to constrain content -->
+            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 w-full">
+                <div class="max-w-7xl mx-auto w-full">
 
                     <!-- === 3.1 Dashboard Section === -->
                     <section id="dashboard-section" class="app-section">
@@ -1586,4 +1586,3 @@
     </script>
 </body>
 </html>
-
