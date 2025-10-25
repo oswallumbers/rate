@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+    <title>Rate Management - Oswal Lumbers</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide-react@latest/dist/lucide-react.js"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+    <style>
+        /* Base styling */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom gradient background */
+        .gradient-bg {
+            background-color: #fce4ec; /* fallback */
+            background-image: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);
+        }
+        /* Hide scrollbar for clean look */
+        body::-webkit-scrollbar {
+            display: none;
+        }
+        body {
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+        
+        /* Notification Toast */
+        #notification-toast {
+            transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+            transform: translateY(-200%);
+            opacity: 0;
+        }
+        #notification-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-gray-800">
+
+    <!-- Global App Container -->
+    <div id="app" class="h-screen w-full flex flex-col">
+
+        <!-- ===== 1. Loading Screen ===== -->
+        <div id="loading-page" class="page flex items-center justify-center h-full">
+            <div class="text-center">
+                <div class="w-12 h-12 border-4 border-pink-700 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p class="mt-3 font-semibold text-pink-800">Loading RateTrack...</p>
+            </div>
+        </div>
+
+        <!-- ===== 2. Auth Page (Login / Signup) ===== -->
+        <div id="auth-page" class="page flex items-center justify-center min-h-screen p-4 hidden">
+            <div class="w-full max-w-md bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl">
+                
+                <!-- Logo/Header -->
+                <div class="text-center mb-6">
+                    <svg class="w-16 h-16 mx-auto text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.105 0 2 .895 2 2s-.895 2-2 2-2-.895-2-2 .895-2 2 2zm0 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.105 0 2 .895 2 2s-.895 2-2 2-2-.895-2-2 .895-2 2 2zm0 12c-1.105 0-2 .895-2 2s.895 2 2 2 2-.895 2-2-.895-2-2 2z"></path></svg>
+                    <h1 class="text-3xl font-bold text-pink-800 mt-2">RateTrack</h1>
+                    <p class="text-gray-600">Oswal Lumbers Portal</p>
+                </div>
+
+                <!-- Auth Error Message -->
+                <div id="auth-error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4 text-sm" role="alert">
+                    <span class="block sm:inline" id="auth-error-message"></span>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form" class="space-y-4">
+                    <div>
+                        <label for="login-email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" id="login-email" required class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                    </div>
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" id="login-password" required class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                    </div>
+                    <button type="submit" class="w-full bg-pink-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-pink-700 transition-all duration-300 ease-in-out transform hover:-translate-y-0.5">
+                        Login
+                    </button>
+                </form>
+
+                <!-- Signup Form -->
+                <form id="signup-form" class="space-y-4 hidden">
+                    <div>
+                        <label for="signup-email" class="block text-sm font-medium text-gray-700">Company Email</label>
+                        <input type="email" id="signup-email" required class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500" placeholder="you@oswallumbers.com">
+                        <p class="text-xs text-gray-500 mt-1">Must be a valid @oswallumbers.com email.</p>
+                    </div>
+                    <div>
+                        <label for="signup-password" class="block text-sm font-medium text-gray-700">Password</d>
+                        <input type="password" id="signup-password" required class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500" placeholder="Min. 6 characters">
+                    </div>
+                    <button type="submit" class="w-full bg-pink-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-pink-800 transition-all duration-300 ease-in-out transform hover:-translate-y-0.5">
+                        Create Account
+                    </button>
+                </form>
+
+                <!-- Toggle Links -->
+                <div class="text-center mt-6">
+                    <button id="show-signup-btn" class="text-sm font-medium text-pink-600 hover:text-pink-800">
+                        Don't have an account? Sign Up
+                    </button>
+                    <button id="show-login-btn" class="text-sm font-medium text-pink-600 hover:text-pink-800 hidden">
+                        Already have an account? Login
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ===== 3. PIN Setup Page ===== -->
+        <div id="pin-setup-page" class="page flex items-center justify-center min-h-screen p-4 hidden">
+            <div class="w-full max-w-md bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl text-center">
+                <h2 class="text-2xl font-bold text-pink-800 mb-3">Create a 4-Digit PIN</h2>
+                <p class="text-gray-600 mb-6">For faster, secure access to your account.</p>
+
+                <!-- PIN Setup Form -->
+                <form id="pin-setup-form">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="setup-pin" class="block text-sm font-medium text-gray-700 sr-only">Enter PIN</label>
+                            <input type="password" id="setup-pin" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" required class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 text-center text-2xl tracking-[.5em]">
+                        </div>
+                        <div>
+                            <label for="confirm-pin" class="block text-sm font-medium text-gray-700 sr-only">Confirm PIN</label>
+                            <input type="password" id="confirm-pin" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" required class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 text-center text-2xl tracking-[.5em]">
+                        </div>
+                        <p id="pin-setup-error" class="text-red-600 text-sm hidden"></p>
+                        <button type="submit" class="w-full bg-pink-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-pink-700 transition-all duration-300 ease-in-out transform hover:-translate-y-0.5">
+                            Save PIN
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ===== 4. PIN Unlock Page ===== -->
+        <div id="pin-unlock-page" class="page flex items-center justify-center min-h-screen p-4 hidden">
+            <div class="w-full max-w-md bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl text-center">
+                <svg class="w-16 h-16 mx-auto text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                <h2 id="pin-unlock-email" class="text-xl font-semibold text-pink-800 mt-4 mb-3">Welcome Back!</h2>
+                <p class="text-gray-600 mb-6">Enter your 4-digit PIN to unlock.</p>
+
+                <!-- PIN Unlock Form -->
+                <form id="pin-unlock-form">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="unlock-pin" class="block text-sm font-medium text-gray-700 sr-only">Enter PIN</label>
+                            <input type="password" id="unlock-pin" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" required class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 text-center text-2xl tracking-[.5em]">
+                        </div>
+                        <p id="pin-unlock-error" class="text-red-600 text-sm hidden"></p>
+                        <button type="submit" class="w-full bg-pink-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-pink-700 transition-all duration-300 ease-in-out transform hover:-translate-y-0.5">
+                            Unlock
+                        </button>
+                    </div>
+                </form>
+                 <button id="forget-pin-btn" class="text-sm font-medium text-pink-600 hover:text-pink-800 mt-6">
+                    Forgot PIN? / Log out
+                </button>
+            </div>
+        </div>
+
+
+        <!-- ===== 5. Main App Page (Dashboard, Manage, History) ===== -->
+        <div id="main-page" class="page flex flex-col h-screen hidden">
+            
+            <!-- Header -->
+            <header class="bg-white/80 backdrop-blur-sm shadow-md w-full z-10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between items-center h-16">
+                        <!-- Logo -->
+                        <div class="flex-shrink-0 flex items-center">
+                            <svg class="w-8 h-8 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.105 0 2 .895 2 2s-.895 2-2 2-2-.895-2-2 .895-2 2 2zm0 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.105 0 2 .895 2 2s-.895 2-2 2-2-.895-2-2 .895-2 2 2zm0 12c-1.105 0-2 .895-2 2s.895 2 2 2 2-.895 2-2-.895-2-2 2z"></path></svg>
+                            <span class="font-bold text-xl ml-2 text-pink-800">RateTrack</span>
+                        </div>
+                        <!-- User Info & Logout -->
+                        <div class="flex items-center">
+                            <span id="user-email-display" class="hidden sm:block text-sm font-medium text-gray-600 mr-4"></span>
+                            <button id="logout-btn" class="p-2 rounded-full text-gray-600 hover:text-pink-700 hover:bg-pink-100 transition-all">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Email Verification Notice -->
+            <div id="verification-notice" class="hidden bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
+                <p class="font-bold">Verify Your Email</p>
+                <p>Please check your inbox to verify your email address. <button id="resend-verification-btn" class="font-bold underline hover:text-yellow-800">Resend verification email</button></p>
+            </div>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+                <div class="max-w-7xl mx-auto">
+
+                    <!-- === 3.1 Dashboard Section === -->
+                    <section id="dashboard-section" class="app-section">
+                        <div class="flex justify-between items-center mb-6">
+                             <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
+                        </div>
+                        
+                        <!-- Latest Updates Grid -->
+                        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Latest 5 Party Updates</h3>
+                        <div id="latest-rate-display" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                            <!-- Cards will be injected by JS -->
+                            <div class="bg-white/90 p-4 rounded-lg shadow-lg text-center">
+                                <p class="text-gray-500">Loading data...</p>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- === 3.2 Manage Rates Section === -->
+                    <section id="manage-rates-section" class="app-section hidden mt-8">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Manage Rates</h2>
+
+                        <!-- Add New Rate Form -->
+                        <div class="bg-white/90 p-6 rounded-2xl shadow-xl mb-8">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Add New Rate</h3>
+                            <form id="add-rate-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label for="new-party-name" class="block text-sm font-medium text-gray-700">Party Name</label>
+                                    <input type="text" id="new-party-name" required class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500">
+                                </div>
+                                <div>
+                                    <label for="new-item-name" class="block text-sm font-medium text-gray-700">Item Name</label>
+                                    <input type="text" id="new-item-name" required class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500">
+                                </div>
+                                <div>
+                                    <label for="new-rate" class="block text-sm font-medium text-gray-700">Rate (₹)</label>
+                                    <input type="number" step="0.01" id="new-rate" required class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500">
+                                </div>
+                                <div class="md:self-end">
+                                    <button type="submit" class="w-full bg-pink-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-pink-700 transition-all duration-300 ease-in-out transform hover:-translate-y-0.5">
+                                        Add Rate
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Current Rates List -->
+                        <div class="bg-white/90 p-6 rounded-2xl shadow-xl">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Current Rates</h3>
+                                <input type="text" id="search-rates" class="block px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500" placeholder="Search party or item...">
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Party Name</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Name</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Rate (₹)</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated By</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated On</th>
+                                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rates-table-body" class="bg-white divide-y divide-gray-200">
+                                        <!-- Rows will be injected by JS -->
+                                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading rates...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </section>
+
+                    <!-- === 3.3 History Section === -->
+                    <section id="history-section" class="app-section hidden mt-8">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Rate Change History</h2>
+
+                        <!-- NEW: Filter Bar -->
+                        <div class="bg-white/90 p-4 rounded-2xl shadow-xl mb-8">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Filters</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                                <div>
+                                    <label for="filter-party" class="block text-sm font-medium text-gray-700">Party Name</label>
+                                    <select id="filter-party" class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500">
+                                        <option value="">All Parties</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="filter-item" class="block text-sm font-medium text-gray-700">Item Name</label>
+                                    <select id="filter-item" class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500">
+                                        <option value="">All Items</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="filter-start-date" class="block text-sm font-medium text-gray-700">From Date</label>
+                                    <input type="date" id="filter-start-date" class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500">
+                                </div>
+                                <div>
+                                    <label for="filter-end-date" class="block text-sm font-medium text-gray-700">To Date</label>
+                                    <input type="date" id="filter-end-date" class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500">
+                                </div>
+                                <div class="flex items-end space-x-2">
+                                    <button id="apply-filter-btn" class="w-full bg-pink-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-pink-700 transition-all">
+                                        Filter
+                                    </button>
+                                    <button id="clear-filter-btn" class="w-auto p-3 bg-gray-300 text-gray-700 rounded-lg shadow-lg hover:bg-gray-400 transition-all" title="Clear Filters">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/90 p-6 rounded-2xl shadow-xl">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Changed By</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Party Name</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Name</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Old Rate (₹)</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">New Rate (₹)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="history-table-body" class="bg-white divide-y divide-gray-200">
+                                        <!-- Rows will be injected by JS -->
+                                        <tr><td colspan="6" class="p-4 text-center text-gray-500">Loading history...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- === 3.4 Analytics Section === -->
+                    <section id="analytics-section" class="app-section hidden mt-8">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Analytics: Item Rate History</h2>
+                        
+                        <div class="bg-white/90 p-6 rounded-2xl shadow-xl mb-8">
+                            <div class="w-full md:w-1/3">
+                                <label for="analytics-item-select" class="block text-sm font-medium text-gray-700">Select Item to Graph</label>
+                                <select id="analytics-item-select" class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500">
+                                    <option value="">Select an item</option>
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/90 p-6 rounded-2xl shadow-xl">
+                            <canvas id="item-rate-chart"></canvas>
+                        </div>
+                    </section>
+
+
+                </div>
+            </main>
+
+            <!-- Bottom Navigation (Mobile) -->
+            <nav class="sm:hidden w-full bg-white/90 backdrop-blur-sm shadow-t-lg border-t border-gray-200 sticky bottom-0 z-10">
+                <div class="flex justify-around items-center h-16">
+                    <button class="nav-btn p-3 text-pink-700 rounded-lg" data-target="dashboard-section">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6-4h.01M12 16h.01"></path></svg>
+                    </button>
+                    <button class="nav-btn p-3 text-gray-500 hover:text-pink-700" data-target="manage-rates-section">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    </button>
+                    <button class="nav-btn p-3 text-gray-500 hover:text-pink-700" data-target="analytics-section">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                    </button>
+                    <button class="nav-btn p-3 text-gray-500 hover:text-pink-700" data-target="history-section">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Side Navigation (Desktop) -->
+            <div class="hidden sm:flex fixed top-16 left-0 h-full w-20 lg:w-56 bg-white/80 backdrop-blur-sm shadow-r-lg z-0 pt-8 transition-all duration-300">
+                <div class="flex flex-col w-full px-3">
+                    <button class="nav-btn flex items-center p-3 lg:px-4 lg:py-3 text-pink-700 bg-pink-100 rounded-lg transition-all" data-target="dashboard-section">
+                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6-4h.01M12 16h.01"></path></svg>
+                        <span class="hidden lg:inline font-semibold ml-3">Dashboard</span>
+                    </button>
+                    <button class="nav-btn flex items-center mt-3 p-3 lg:px-4 lg:py-3 text-gray-600 hover:text-pink-700 hover:bg-pink-100 rounded-lg transition-all" data-target="manage-rates-section">
+                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        <span class="hidden lg:inline font-semibold ml-3">Manage Rates</span>
+                    </button>
+                    <button class="nav-btn flex items-center mt-3 p-3 lg:px-4 lg:py-3 text-gray-600 hover:text-pink-700 hover:bg-pink-100 rounded-lg transition-all" data-target="analytics-section">
+                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                        <span class="hidden lg:inline font-semibold ml-3">Analytics</span>
+                    </button>
+                    <button class="nav-btn flex items-center mt-3 p-3 lg:px-4 lg:py-3 text-gray-600 hover:text-pink-700 hover:bg-pink-100 rounded-lg transition-all" data-target="history-section">
+                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span class="hidden lg:inline font-semibold ml-3">History</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Padding for Desktop Nav -->
+            <style>
+                @media (min-width: 640px) {
+                    #main-page main {
+                        padding-left: 6.5rem; /* 80px + 1rem padding */
+                    }
+                }
+                @media (min-width: 1024px) {
+                    #main-page main {
+                        padding-left: 16rem; /* 224px + 2rem padding */
+                    }
+                }
+            </style>
+        </div>
+
+    </div>
+
+    <!-- ===== Modals ===== -->
+    
+    <!-- Edit Rate Modal -->
+    <div id="edit-rate-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white w-full max-w-md p-6 rounded-2xl shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Update Rate</h3>
+                <button id="close-modal-btn" class="p-2 rounded-full text-gray-500 hover:bg-gray-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form id="edit-rate-form">
+                <input type="hidden" id="edit-doc-id">
+                <input type="hidden" id="edit-old-rate">
+                
+                <div class="mb-4">
+                    <p class="text-sm font-medium text-gray-600">Party Name</p>
+                    <p id="edit-party-name" class="text-lg font-semibold text-gray-800"></p>
+                </div>
+                <div class="mb-4">
+                    <p class="text-sm font-medium text-gray-600">Item Name</p>
+                    <p id="edit-item-name" class="text-lg font-semibold text-gray-800"></p>
+                </div>
+                <div class="mb-4">
+                    <p class="text-sm font-medium text-gray-600">Current Rate</p>
+                    <p id="edit-current-rate" class="text-lg font-semibold text-gray-800"></p>
+                </div>
+                <div>
+                    <label for="edit-new-rate" class="block text-sm font-medium text-gray-700">New Rate (₹)</label>
+                    <input type="number" step="0.01" id="edit-new-rate" required class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 text-lg">
+                </div>
+                <button type="submit" class="w-full mt-6 bg-pink-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-pink-700 transition-all duration-300 ease-in-out transform hover:-translate-y-0.5">
+                    Save Update
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Alert/Message Modal -->
+    <div id="message-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white w-full max-w-sm p-6 rounded-2xl shadow-2xl text-center">
+            <h3 id="message-title" class="text-xl font-bold text-gray-800 mb-2">Notice</h3>
+            <p id="message-body" class="text-gray-600 mb-6"></p>
+            <button id="close-message-btn" class="w-full bg-pink-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-pink-700 transition-all">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <!-- NEW: Notification Toast -->
+    <div id="notification-toast" class="fixed top-5 right-5 w-full max-w-sm bg-white p-4 rounded-xl shadow-2xl border-l-4 border-pink-500 z-50">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <div class="ml-3 w-0 flex-1 pt-0.5">
+                <p id="notification-title" class="text-sm font-bold text-gray-900">Rate Updated</p>
+                <p id="notification-message" class="mt-1 text-sm text-gray-600">Someone changed a rate.</p>
+            </div>
+            <div class="ml-4 flex-shrink-0 flex">
+                <button id="close-notification-btn" class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500">
+                    <span class="sr-only">Close</span>
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // --- Firebase Imports ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+        import {
+            getAuth,
+            setPersistence,
+            browserLocalPersistence,
+            onAuthStateChanged,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            sendEmailVerification,
+            signInWithCustomToken,
+            signInAnonymously
+        } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+        import {
+            getFirestore,
+            setLogLevel,
+            doc,
+            getDoc,
+            setDoc,
+            addDoc,
+            collection,
+            onSnapshot,
+            query,
+            Timestamp,
+            writeBatch
+        } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+        // --- App Constants ---
+        const APP_DOMAIN = "oswallumbers.com";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyCLKjQ7cPnpxxsCurZONr68xh1m7LkEkgw",
+          authDomain: "rate-management-26058.firebaseapp.com",
+          projectId: "rate-management-26058",
+          storageBucket: "rate-management-26058.firebasestorage.app",
+          messagingSenderId: "366164268195",
+          appId: "1:366164268195:web:73e1168625cfe14ee39b16"
+        };
+        
+        // Use simple root-level collections for a standalone project
+        const RATES_COLLECTION = `rates`;
+        const HISTORY_COLLECTION = `rateHistory`;
+        const PREFERENCES_COLLECTION = `userPreferences`; // New collection for PIN
+        
+        // --- Firebase Initialization ---
+        let app, auth, db;
+        let currentUserId = null;
+        let currentUserEmail = null;
+        let currentUserPinHash = null; // To store the fetched PIN hash
+        let allRatesData = []; // Cache for search/filtering
+        let allHistoryData = []; // Cache for history
+        let itemRateChart = null; // Chart.js instance
+
+        // Unsubscribe functions for listeners
+        let unsubscribeRates = () => {};
+        let unsubscribeHistory = () => {};
+
+        // --- DOM Elements ---
+        const pages = {
+            loading: document.getElementById('loading-page'),
+            auth: document.getElementById('auth-page'),
+            pinSetup: document.getElementById('pin-setup-page'),   // New PIN page
+            pinUnlock: document.getElementById('pin-unlock-page'), // New PIN page
+            main: document.getElementById('main-page')
+        };
+        const authError = document.getElementById('auth-error');
+        const authErrorMessage = document.getElementById('auth-error-message');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const showSignupBtn = document.getElementById('show-signup-btn');
+        const showLoginBtn = document.getElementById('show-login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userEmailDisplay = document.getElementById('user-email-display');
+        const verificationNotice = document.getElementById('verification-notice');
+        const resendVerificationBtn = document.getElementById('resend-verification-btn');
+        const navButtons = document.querySelectorAll('.nav-btn');
+        const appSections = document.querySelectorAll('.app-section');
+        const latestRateDisplay = document.getElementById('latest-rate-display');
+        const addRateForm = document.getElementById('add-rate-form');
+        const ratesTableBody = document.getElementById('rates-table-body');
+        const historyTableBody = document.getElementById('history-table-body');
+        const searchRatesInput = document.getElementById('search-rates');
+        
+        // Modals
+        const editRateModal = document.getElementById('edit-rate-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const editRateForm = document.getElementById('edit-rate-form');
+        const messageModal = document.getElementById('message-modal');
+        const messageTitle = document.getElementById('message-title');
+        const messageBody = document.getElementById('message-body');
+        const closeMessageBtn = document.getElementById('close-message-btn');
+
+        // PIN Page Elements
+        const pinSetupForm = document.getElementById('pin-setup-form');
+        const setupPinInput = document.getElementById('setup-pin');
+        const confirmPinInput = document.getElementById('confirm-pin');
+        const pinSetupError = document.getElementById('pin-setup-error');
+        const pinUnlockForm = document.getElementById('pin-unlock-form');
+        const unlockPinInput = document.getElementById('unlock-pin');
+        const pinUnlockError = document.getElementById('pin-unlock-error');
+        const pinUnlockEmail = document.getElementById('pin-unlock-email');
+        const forgetPinBtn = document.getElementById('forget-pin-btn');
+        
+        // NEW: Filter Elements
+        const filterParty = document.getElementById('filter-party');
+        const filterItem = document.getElementById('filter-item');
+        const filterStartDate = document.getElementById('filter-start-date');
+        const filterEndDate = document.getElementById('filter-end-date');
+        const applyFilterBtn = document.getElementById('apply-filter-btn');
+        const clearFilterBtn = document.getElementById('clear-filter-btn');
+
+        // NEW: Analytics Elements
+        const analyticsItemSelect = document.getElementById('analytics-item-select');
+        const chartCanvas = document.getElementById('item-rate-chart').getContext('2d');
+
+        // NEW: Notification Elements
+        const notificationToast = document.getElementById('notification-toast');
+        const notificationTitle = document.getElementById('notification-title');
+        const notificationMessage = document.getElementById('notification-message');
+        const closeNotificationBtn = document.getElementById('close-notification-btn');
+
+
+        // --- Utility Functions ---
+
+        /**
+         * Simple (non-crypto) hash function for PIN.
+         * We don't store the PIN, only this hash.
+         * @param {string} str - The string to hash
+         * @returns {string} - A hash string
+         */
+        const hashString = (str) => {
+            let hash = 0, i, chr;
+            if (str.length === 0) return hash.toString();
+            for (i = 0; i < str.length; i++) {
+                chr = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + chr;
+                hash |= 0; // Convert to 32bit integer
+            }
+            return hash.toString();
+        };
+        
+        /**
+         * Switches the visible page
+         * @param {string} pageName - 'loading', 'auth', 'pinSetup', 'pinUnlock', or 'main'
+         */
+        function showPage(pageName) {
+            Object.values(pages).forEach(page => {
+                if (page) page.classList.add('hidden');
+            });
+            if (pages[pageName]) {
+                pages[pageName].classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Displays a custom message modal
+         * @param {string} title - The title for the modal
+         * @param {string} body - The body text for the modal
+         */
+        function showMessage(title, body) {
+            messageTitle.textContent = title;
+            messageBody.textContent = body;
+            messageModal.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the custom message modal
+         */
+        function hideMessage() {
+            messageModal.classList.add('hidden');
+        }
+
+        /**
+         * Shows an authentication error
+         * @param {string} message - The error message to display
+         */
+        function showAuthError(message) {
+            authErrorMessage.textContent = message;
+            authError.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the authentication error
+         */
+        function hideAuthError() {
+            authError.classList.add('hidden');
+        }
+        
+        /**
+         * Shows a notification toast
+         * @param {string} title - The title for the notification
+         * @param {string} message - The body text for the notification
+         */
+        function showNotification(title, message) {
+            notificationTitle.textContent = title;
+            notificationMessage.textContent = message;
+            notificationToast.classList.add('show');
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                hideNotification();
+            }, 5000);
+        }
+
+        /**
+         * Hides the notification toast
+         */
+        function hideNotification() {
+            notificationToast.classList.remove('show');
+        }
+        closeNotificationBtn.addEventListener('click', hideNotification);
+
+
+        /**
+         * Formats a Firestore Timestamp or Date object into a readable string
+         * @param {Timestamp | Date} timestamp - The timestamp to format
+         * @returns {string} - e.g., "Oct 23, 2025, 11:46 AM"
+         */
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return "N/A";
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+        
+        /**
+         * Formats a Firestore Timestamp into a short date string (for charts)
+         * @param {Timestamp | Date} timestamp - The timestamp to format
+         * @returns {string} - e.g., "10/23/2025"
+         */
+        function formatShortDate(timestamp) {
+            if (!timestamp) return "N/A";
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        }
+
+
+        /**
+         * Formats a number as Indian Rupees
+         * @param {number} amount - The amount to format
+         * @returns {string} - e.g., "₹150.75"
+         */
+        function formatCurrency(amount) {
+            if (typeof amount !== 'number') {
+                amount = parseFloat(amount) || 0;
+            }
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR'
+            }).format(amount);
+        }
+
+        // --- Navigation Logic ---
+        
+        function handleNav(targetId) {
+            // Hide all sections
+            appSections.forEach(section => section.classList.add('hidden'));
+            
+            // Show target section
+            const targetSection = document.getElementById(targetId);
+            if (targetSection) {
+                targetSection.classList.remove('hidden');
+            }
+
+            // Update button active states
+            navButtons.forEach(btn => {
+                if (btn.dataset.target === targetId) {
+                    btn.classList.add('text-pink-700', 'bg-pink-100');
+                    btn.classList.remove('text-gray-500', 'text-gray-600', 'hover:text-pink-700');
+                } else {
+                    btn.classList.remove('text-pink-700', 'bg-pink-100');
+                    btn.classList.add('text-gray-500', 'hover:text-pink-700');
+                }
+            });
+
+            // Special init for analytics page
+            if (targetId === 'analytics-section') {
+                initializeAnalytics();
+            }
+        }
+
+        navButtons.forEach(btn => {
+            btn.addEventListener('click', () => handleNav(btn.dataset.target));
+        });
+
+        // --- Auth UI Logic ---
+        showSignupBtn.addEventListener('click', () => {
+            loginForm.classList.add('hidden');
+            signupForm.classList.remove('hidden');
+            showSignupBtn.classList.add('hidden');
+            showLoginBtn.classList.remove('hidden');
+            hideAuthError();
+        });
+
+        showLoginBtn.addEventListener('click', () => {
+            signupForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            showLoginBtn.classList.add('hidden');
+            showSignupBtn.classList.remove('hidden');
+            hideAuthError();
+        });
+
+        // --- Firebase Auth Logic ---
+
+        /**
+         * Initializes the application and Firebase services
+         */
+        async function initialize() {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('Debug'); // Enable Firestore logging
+
+                // Set persistence to local
+                await setPersistence(auth, browserLocalPersistence);
+
+                // Start listening for auth changes
+                onAuthStateChanged(auth, handleAuthStateChange);
+            } catch (error) {
+                console.error("Firebase Init Error:", error);
+                showMessage("Initialization Error", `Failed to initialize Firebase: ${error.message}`);
+                showPage('auth');
+            }
+        }
+
+        /**
+         * Handles user login or logout
+         * @param {object | null} user - The Firebase user object or null
+         */
+        async function handleAuthStateChange(user) {
+            if (user) {
+                // User is signed in, NOW check if they are verified
+                if (user.emailVerified) {
+                    // --- User is VERIFIED ---
+                    currentUserId = user.uid;
+                    currentUserEmail = user.email;
+
+                    userEmailDisplay.textContent = currentUserEmail;
+                    userEmailDisplay.classList.remove('hidden');
+                    verificationNotice.classList.add('hidden'); // Hide notice, they are verified
+
+                    // Now, check for PIN preferences
+                    try {
+                        const prefDocRef = doc(db, PREFERENCES_COLLECTION, currentUserId);
+                        const prefDoc = await getDoc(prefDocRef);
+
+                        if (!prefDoc.exists()) {
+                            // First-time verified login, or PIN not set up
+                            // Need to create a PIN
+                            showPage('pinSetup');
+                        } else {
+                            // User has a PIN, needs to unlock
+                            currentUserPinHash = prefDoc.data().pinHash;
+                            pinUnlockEmail.textContent = `Welcome back, ${currentUserEmail}`;
+                            showPage('pinUnlock');
+                        }
+                    } catch (error) {
+                        console.error("Error fetching user preferences:", error);
+                        showMessage("Error", "Could not verify your PIN settings. Please try logging in again.");
+                        await signOut(auth);
+                    }
+                    
+                } else {
+                    // --- User is NOT VERIFIED ---
+                    // Log them out, show auth page with an error.
+                    currentUserId = null;
+                    currentUserEmail = null;
+                    
+                    // Detach any potential listeners
+                    unsubscribeRates();
+                    unsubscribeHistory();
+
+                    showPage('auth');
+                    showAuthError("Your email is not verified. Please check your inbox for the verification link.");
+                }
+                
+            } else {
+                // User is signed out
+                currentUserId = null;
+                currentUserEmail = null;
+                userEmailDisplay.textContent = '';
+                userEmailDisplay.classList.add('hidden');
+                
+                // Detach listeners
+                unsubscribeRates();
+                unsubscribeHistory();
+
+                // Clear UI data
+                ratesTableBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">Please log in to see rates.</td></tr>';
+                historyTableBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">Please log in to see history.</td></tr>';
+                latestRateDisplay.innerHTML = '<p class="text-gray-500">Please log in.</p>';
+                
+                showPage('auth');
+            }
+        }
+
+        // Handle Signup
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAuthError();
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+
+            // --- Domain Check ---
+            if (!email.endsWith(`@${APP_DOMAIN}`)) {
+                showAuthError(`Signup is restricted to @${APP_DOMAIN} emails.`);
+                return;
+            }
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                // Send verification email
+                await sendEmailVerification(userCredential.user);
+                
+                // Show success message and switch to login
+                showMessage("Account Created", "Success! Please check your email for a verification link, then log in.");
+                showLoginBtn.click(); // Switch to login view
+                signupForm.reset();
+
+            } catch (error) {
+                console.error("Signup Error:", error);
+                showAuthError(error.message);
+            }
+        });
+
+        // Handle Login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAuthError();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                
+                // --- NEW VERIFICATION CHECK ---
+                if (!userCredential.user.emailVerified) {
+                    // User is not verified, show error and sign them out.
+                    showAuthError("Login failed: Your email is not verified. Please check your inbox for the verification link.");
+                    await signOut(auth); // This is crucial. Sign them out immediately.
+                }
+                // If they ARE verified, the onAuthStateChanged listener
+                // will fire and handle the rest (PIN check).
+
+            } catch (error) {
+                console.error("Login Error:", error);
+                showAuthError(error.message);
+            }
+        });
+
+        // Handle Logout
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                // onAuthStateChanged will handle the rest (UI cleanup, page switch)
+            } catch (error) {
+                console.error("Logout Error:", error);
+                showMessage("Logout Error", error.message);
+            }
+        });
+
+        // Handle Resend Verification
+        resendVerificationBtn.addEventListener('click', async () => {
+            const user = auth.currentUser;
+            if (user && !user.emailVerified) {
+                try {
+                    await sendEmailVerification(user);
+                    showMessage("Email Sent", "A new verification email has been sent to your address.");
+                } catch (error) {
+                    console.error("Resend Verification Error:", error);
+                    showMessage("Error", `Failed to send email: ${error.message}`);
+                }
+            }
+        });
+
+        // --- NEW PIN LOGIC ---
+
+        // Handle PIN Setup
+        pinSetupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pin = setupPinInput.value;
+            const confirmPin = confirmPinInput.value;
+            pinSetupError.classList.add('hidden');
+
+            if (pin.length !== 4) {
+                pinSetupError.textContent = "PIN must be exactly 4 digits.";
+                pinSetupError.classList.remove('hidden');
+                return;
+            }
+            if (pin !== confirmPin) {
+                pinSetupError.textContent = "PINs do not match.";
+                pinSetupError.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                // Save the HASH of the PIN, not the PIN itself
+                const pinHash = hashString(pin);
+                const prefDocRef = doc(db, PREFERENCES_COLLECTION, currentUserId);
+                await setDoc(prefDocRef, { pinHash: pinHash });
+
+                // PIN is set, now proceed to the main app
+                currentUserPinHash = pinHash;
+                showPage('main');
+                handleNav('dashboard-section');
+                attachFirestoreListeners();
+
+            } catch (error) {
+                console.error("PIN Setup Error:", error);
+                pinSetupError.textContent = `Error saving PIN: ${error.message}`;
+                pinSetupError.classList.remove('hidden');
+            }
+        });
+
+        // Handle PIN Unlock
+        pinUnlockForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const pin = unlockPinInput.value;
+            pinUnlockError.classList.add('hidden');
+
+            const enteredHash = hashString(pin);
+
+            if (enteredHash === currentUserPinHash) {
+                // Success! Unlock the app.
+                showPage('main');
+                handleNav('dashboard-section');
+                attachFirestoreListeners();
+                unlockPinInput.value = ""; // Clear for security
+            } else {
+                // Failed
+                pinUnlockError.textContent = "Wrong PIN. Please try again.";
+                pinUnlockError.classList.remove('hidden');
+                unlockPinInput.value = ""; // Clear for security
+                unlockPinInput.focus();
+            }
+        });
+
+        // Handle "Forgot PIN" / Logout
+        forgetPinBtn.addEventListener('click', async () => {
+            // Replaced confirm() with showMessage and a custom confirm
+            showMessage("Confirm Logout", "Are you sure you want to log out? You will need your email and password to log in again.");
+            
+            // This is a simple implementation. A better one would use a modal with "Yes/No" buttons.
+            // For now, the user must click "OK" then log out from the main screen if they see it.
+            // A more robust way:
+            try {
+                await signOut(auth);
+                hideMessage();
+                // onAuthStateChanged will handle switching to the 'auth' page
+            } catch (error) {
+                console.error("Logout Error:", error);
+                showMessage("Logout Error", error.message);
+            }
+        });
+
+
+        // --- Firestore Listeners ---
+
+        /**
+         * Attaches real-time listeners to Firestore collections
+         */
+        function attachFirestoreListeners() {
+            console.log("Attaching listeners...");
+            if (!db || !currentUserId) {
+                console.error("Firestore DB or User not initialized for listeners.");
+                return;
+            }
+
+            // --- Rates Listener ---
+            const ratesQuery = query(collection(db, RATES_COLLECTION));
+            unsubscribeRates = onSnapshot(ratesQuery, (snapshot) => {
+                allRatesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Sort by last updated
+                allRatesData.sort((a, b) => {
+                    const timeA = a.updatedAt ? a.updatedAt.toMillis() : 0;
+                    const timeB = b.updatedAt ? b.updatedAt.toMillis() : 0;
+                    return timeB - timeA; // Newest first
+                });
+                
+                renderRatesTable(allRatesData);
+                renderLatestRate(allRatesData); // Update dashboard
+                populateFilterDropdowns(allRatesData); // NEW: Populate filters
+
+            }, (error) => {
+                console.error("Rates Listener Error:", error);
+                showMessage("Data Error", "Could not load rates data. " + error.message);
+                ratesTableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${error.message}</td></tr>`;
+            });
+
+            // --- History Listener ---
+            const historyQuery = query(collection(db, HISTORY_COLLECTION));
+            unsubscribeHistory = onSnapshot(historyQuery, (snapshot) => {
+                
+                // Check for new changes to show notifications
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added') {
+                        const data = change.doc.data();
+                        const changeTime = data.changedAt.toMillis();
+                        const now = Date.now();
+                        
+                        // If change is new (within 10s) and not by the current user, show notification
+                        if ((now - changeTime < 10000) && (data.changedByEmail !== currentUserEmail)) {
+                            const title = data.oldRate === 0 ? "New Rate Added" : "Rate Updated";
+                            const message = `${data.partyName} / ${data.itemName} set to ${formatCurrency(data.newRate)} by ${data.changedByEmail}`;
+                            showNotification(title, message);
+                        }
+                    }
+                });
+                
+                // Process the full list for the table
+                allHistoryData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Sort by timestamp
+                allHistoryData.sort((a, b) => {
+                    const timeA = a.changedAt ? a.changedAt.toMillis() : 0;
+                    const timeB = b.changedAt ? b.changedAt.toMillis() : 0;
+                    return timeB - timeA; // Newest first
+                });
+                
+                // Render the table (respecting filters)
+                applyHistoryFilters(); 
+                
+            }, (error) => {
+                console.error("History Listener Error:", error);
+                showMessage("Data Error", "Could not load history data. " + error.message);
+                historyTableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${error.message}</td></tr>`;
+            });
+        }
+
+        // --- UI Rendering Functions ---
+
+        /**
+         * Renders the "Current Rates" table
+         * @param {Array} rates - Array of rate objects
+         */
+        function renderRatesTable(rates) {
+            if (rates.length === 0) {
+                ratesTableBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No rates added yet.</td></tr>';
+                return;
+            }
+
+            ratesTableBody.innerHTML = rates.map(rate => `
+                <tr class="hover:bg-pink-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${rate.partyName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${rate.itemName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-pink-700">${formatCurrency(rate.rate)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${rate.updatedByEmail || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatTimestamp(rate.updatedAt)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="edit-btn text-pink-600 hover:text-pink-900" 
+                                data-id="${rate.id}" 
+                                data-party="${rate.partyName}"
+                                data-item="${rate.itemName}"
+                                data-rate="${rate.rate}">
+                            Edit
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        /**
+         * Renders the "Rate Change History" table
+         * @param {Array} history - Array of history objects
+         */
+        function renderHistoryTable(history) {
+            if (history.length === 0) {
+                historyTableBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No rate changes found matching your filters.</td></tr>';
+                return;
+            }
+
+            historyTableBody.innerHTML = history.map(entry => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatTimestamp(entry.changedAt)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${entry.changedByEmail}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${entry.partyName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${entry.itemName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">${formatCurrency(entry.oldRate)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">${formatCurrency(entry.newRate)}</td>
+                </tr>
+            `).join('');
+        }
+
+        /**
+         * Renders the "Latest Rate Update" card(s) on the dashboard
+         * @param {Array} rates - Array of all rate objects
+         */
+        function renderLatestRate(rates) {
+            if (rates.length === 0) {
+                latestRateDisplay.innerHTML = `
+                    <div class="bg-white/90 p-6 rounded-lg shadow-lg text-center col-span-full">
+                        <p class="text-gray-500">No rates added yet.</p>
+                    </div>`;
+                return;
+            }
+            
+            // Find the 5 most recent *unique party* updates
+            const latestPartyUpdates = new Map();
+            // Rates are already pre-sorted by `updatedAt` newest first
+            for (const rate of rates) {
+                if (!latestPartyUpdates.has(rate.partyName)) {
+                    latestPartyUpdates.set(rate.partyName, rate);
+                }
+                if (latestPartyUpdates.size >= 5) {
+                    break;
+                }
+            }
+
+            // If no updates, show message
+            if (latestPartyUpdates.size === 0) {
+                 latestRateDisplay.innerHTML = `
+                    <div class="bg-white/90 p-6 rounded-lg shadow-lg text-center col-span-full">
+                        <p class="text-gray-500">No rates found.</p>
+                    </div>`;
+                return;
+            }
+
+            // Generate HTML for each card
+            let html = '';
+            for (const latest of latestPartyUpdates.values()) {
+                html += `
+                    <div class="bg-white/90 p-4 rounded-xl shadow-lg border-t-4 border-pink-500 flex flex-col justify-between">
+                        <div>
+                            <p class="text-base sm:text-lg font-bold text-gray-800 truncate" title="${latest.partyName}">${latest.partyName}</p>
+                            <p class="text-sm text-gray-600 truncate" title="${latest.itemName}">${latest.itemName}</p>
+                            <p class="text-3xl sm:text-4xl font-extrabold text-pink-700 my-2">${formatCurrency(latest.rate)}</p>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-500">
+                            <p class="truncate" title="${latest.updatedByEmail}">by ${latest.updatedByEmail}</p>
+                            <p>${formatTimestamp(latest.updatedAt)}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            latestRateDisplay.innerHTML = html;
+        }
+
+
+        // --- App Logic ---
+
+        // Search/Filter Rates
+        searchRatesInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            if (!searchTerm) {
+                renderRatesTable(allRatesData); // Show all if search is empty
+                return;
+            }
+
+            const filteredRates = allRatesData.filter(rate => 
+                rate.partyName.toLowerCase().includes(searchTerm) ||
+                rate.itemName.toLowerCase().includes(searchTerm)
+            );
+            renderRatesTable(filteredRates);
+        });
+        
+        // --- NEW: History Filter Logic ---
+        
+        /**
+         * Populates the filter dropdowns with unique party and item names
+         * @param {Array} rates - Array of all rate objects
+         */
+        function populateFilterDropdowns(rates) {
+            const parties = new Set();
+            const items = new Set();
+            
+            rates.forEach(rate => {
+                parties.add(rate.partyName);
+                items.add(rate.itemName);
+            });
+
+            // Populate Party Filter
+            filterParty.innerHTML = '<option value="">All Parties</option>'; // Reset
+            parties.forEach(party => {
+                filterParty.innerHTML += `<option value="${party}">${party}</option>`;
+            });
+
+            // Populate Item Filter
+            filterItem.innerHTML = '<option value="">All Items</option>'; // Reset
+            items.forEach(item => {
+                filterItem.innerHTML += `<option value="${item}">${item}</option>`;
+            });
+        }
+        
+        /**
+         * Applies the selected filters to the history table
+         */
+        function applyHistoryFilters() {
+            const party = filterParty.value;
+            const item = filterItem.value;
+            const startDate = filterStartDate.value ? new Date(filterStartDate.value).getTime() : 0;
+            // Set end date to the end of the selected day
+            const endDate = filterEndDate.value ? new Date(filterEndDate.value).setHours(23, 59, 59, 999) : 0;
+
+            let filteredHistory = allHistoryData;
+
+            if (party) {
+                filteredHistory = filteredHistory.filter(h => h.partyName === party);
+            }
+            if (item) {
+                filteredHistory = filteredHistory.filter(h => h.itemName === item);
+            }
+            if (startDate) {
+                filteredHistory = filteredHistory.filter(h => h.changedAt.toMillis() >= startDate);
+            }
+            if (endDate) {
+                filteredHistory = filteredHistory.filter(h => h.changedAt.toMillis() <= endDate);
+            }
+            
+            renderHistoryTable(filteredHistory);
+        }
+        
+        applyFilterBtn.addEventListener('click', applyHistoryFilters);
+        
+        clearFilterBtn.addEventListener('click', () => {
+            filterParty.value = "";
+            filterItem.value = "";
+            filterStartDate.value = "";
+            filterEndDate.value = "";
+            renderHistoryTable(allHistoryData);
+        });
+
+
+        // --- NEW: Analytics Logic ---
+        
+        /**
+         * Populates the item dropdown for the analytics page
+         */
+        function initializeAnalytics() {
+            const items = new Set();
+            allRatesData.forEach(rate => items.add(rate.itemName));
+            
+            // Only repopulate if it's empty, to avoid resetting selection
+            if (analyticsItemSelect.options.length <= 1) {
+                analyticsItemSelect.innerHTML = '<option value="">Select an item</option>';
+                items.forEach(item => {
+                    analyticsItemSelect.innerHTML += `<option value="${item}">${item}</option>`;
+                });
+            }
+        }
+        
+        analyticsItemSelect.addEventListener('change', (e) => {
+            renderItemGraph(e.target.value);
+        });
+
+        /**
+         * Renders the line graph for a selected item
+         * @param {string} itemName - The name of the item to graph
+         */
+        function renderItemGraph(itemName) {
+            if (itemRateChart) {
+                itemRateChart.destroy(); // Destroy old chart
+            }
+            
+            if (!itemName) {
+                return; // Do nothing if no item is selected
+            }
+
+            // Get all history for this item, sorted oldest to newest
+            const itemHistory = allHistoryData
+                .filter(h => h.itemName === itemName)
+                .sort((a, b) => a.changedAt.toMillis() - b.changedAt.toMillis());
+
+            if (itemHistory.length === 0) {
+                showMessage("No Data", "No rate history found for this item.");
+                return;
+            }
+
+            const labels = itemHistory.map(h => formatShortDate(h.changedAt));
+            const data = itemHistory.map(h => h.newRate);
+
+            itemRateChart = new Chart(chartCanvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `${itemName} Rate (₹)`,
+                        data: data,
+                        fill: false,
+                        borderColor: 'rgb(219, 39, 119)', // Pink
+                        backgroundColor: 'rgb(219, 39, 119)',
+                        tension: 0.1,
+                        stepped: true // Show steps between rate changes
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Rate History for ${itemName}`
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += formatCurrency(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                // Format Y-axis ticks as currency
+                                callback: function(value, index, ticks) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        
+        // --- (Existing App Logic: Add/Edit Rate) ---
+
+        // Add New Rate
+        addRateForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const partyName = document.getElementById('new-party-name').value;
+            const itemName = document.getElementById('new-item-name').value;
+            const rate = parseFloat(document.getElementById('new-rate').value);
+            
+            if (!partyName || !itemName || isNaN(rate)) {
+                showMessage("Invalid Input", "Please fill out all fields correctly.");
+                return;
+            }
+
+            // Check if this party/item combo already exists
+            const existing = allRatesData.find(r => r.partyName === partyName && r.itemName === itemName);
+            
+            if (existing) {
+                showMessage("Duplicate Error", "This Party/Item combination already exists. Please edit the existing rate instead.");
+                return;
+            }
+
+            const newRate = {
+                partyName,
+                itemName,
+                rate,
+                updatedAt: Timestamp.now(),
+                updatedBy: currentUserId,
+                updatedByEmail: currentUserEmail
+            };
+
+            const historyEntry = {
+                partyName,
+                itemName,
+                oldRate: 0.00, // It's a new item
+                newRate: rate,
+                changedAt: Timestamp.now(),
+                changedBy: currentUserId,
+                changedByEmail: currentUserEmail
+            };
+
+            try {
+                // Use a batch write to ensure both operations succeed or fail together
+                const batch = writeBatch(db);
+                
+                // 1. Create the new rate document
+                const newRateRef = doc(collection(db, RATES_COLLECTION));
+                batch.set(newRateRef, newRate);
+                
+                // 2. Create the history log
+                const newHistoryRef = doc(collection(db, HISTORY_COLLECTION));
+                batch.set(newHistoryRef, historyEntry);
+
+                await batch.commit();
+                
+                showMessage("Success", "New rate added successfully.");
+                addRateForm.reset();
+
+            } catch (error) {
+                console.error("Add Rate Error:", error);
+                showMessage("Error", `Failed to add rate: ${error.message}`);
+            }
+        });
+
+        // Open Edit Modal
+        ratesTableBody.addEventListener('click', (e) => {
+            if (e.target.classList.contains('edit-btn')) {
+                const btn = e.target;
+                document.getElementById('edit-doc-id').value = btn.dataset.id;
+                document.getElementById('edit-old-rate').value = btn.dataset.rate;
+                document.getElementById('edit-party-name').textContent = btn.dataset.party;
+                document.getElementById('edit-item-name').textContent = btn.dataset.item;
+                document.getElementById('edit-current-rate').textContent = formatCurrency(btn.dataset.rate);
+                document.getElementById('edit-new-rate').value = ''; // Clear old input
+                
+                editRateModal.classList.remove('hidden');
+                document.getElementById('edit-new-rate').focus();
+            }
+        });
+
+        // Close Edit Modal
+        function closeEditModal() {
+            editRateModal.classList.add('hidden');
+            editRateForm.reset();
+        }
+        closeModalBtn.addEventListener('click', closeEditModal);
+
+        // Handle Edit Rate Form Submission
+        editRateForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const docId = document.getElementById('edit-doc-id').value;
+            const newRate = parseFloat(document.getElementById('edit-new-rate').value);
+            const oldRate = parseFloat(document.getElementById('edit-old-rate').value);
+            const partyName = document.getElementById('edit-party-name').textContent;
+            const itemName = document.getElementById('edit-item-name').textContent;
+
+            if (isNaN(newRate) || newRate <= 0) {
+                showMessage("Invalid Input", "Please enter a valid new rate.");
+                return;
+            }
+            
+            if (newRate === oldRate) {
+                showMessage("No Change", "The new rate is the same as the current rate.");
+                return;
+            }
+
+            const updatedRateData = {
+                rate: newRate,
+                updatedAt: Timestamp.now(),
+                updatedBy: currentUserId,
+                updatedByEmail: currentUserEmail
+            };
+
+            const historyEntry = {
+                partyName,
+                itemName,
+                oldRate,
+                newRate,
+                changedAt: Timestamp.now(),
+                changedBy: currentUserId,
+                changedByEmail: currentUserEmail
+            };
+
+            try {
+                // Use a batch write
+                const batch = writeBatch(db);
+
+                // 1. Update the existing rate document
+                const rateRef = doc(db, RATES_COLLECTION, docId);
+                batch.update(rateRef, updatedRateData);
+
+                // 2. Create the new history log
+                const newHistoryRef = doc(collection(db, HISTORY_COLLECTION));
+                batch.set(newHistoryRef, historyEntry);
+
+                await batch.commit();
+                
+                showMessage("Success", "Rate updated successfully.");
+                closeEditModal();
+
+            } catch (error) {
+                console.error("Update Rate Error:", error);
+                showMessage("Error", `Failed to update rate: ${error.message}`);
+            }
+        });
+
+        // Close Message Modal
+        closeMessageBtn.addEventListener('click', hideMessage);
+        
+        // --- Start the App ---
+        document.addEventListener('DOMContentLoaded', initialize);
+
+    </script>
+</body>
+</html>
+
