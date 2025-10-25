@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- Viewport fix for mobile app (no zoom) -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
     <title>Rate Management - Oswal Lumbers</title>
     <!-- Tailwind CSS CDN -->
@@ -43,6 +44,17 @@
         #notification-toast.show {
             transform: translateY(0);
             opacity: 1;
+        }
+
+        /* Hide number input arrows */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            appearance: textfield; /* Standard property */
+            -moz-appearance: textfield;
         }
     </style>
 </head>
@@ -187,6 +199,7 @@
                         </div>
                         <!-- User Info & Logout -->
                         <div class="flex items-center">
+                            <!-- *** HEADER FIX: This span is now 'hidden' by default and 'sm:block' to show on larger screens *** -->
                             <span id="user-email-display" class="hidden sm:block text-sm font-medium text-gray-600 mr-4"></span>
                             <button id="logout-btn" class="p-2 rounded-full text-gray-600 hover:text-pink-700 hover:bg-pink-100 transition-all">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
@@ -202,7 +215,6 @@
                 <p>Please check your inbox to verify your email address. <button id="resend-verification-btn" class="font-bold underline hover:text-yellow-800">Resend verification email</button></p>
             </div>
 
-            <!-- **** THIS IS THE FIX **** -->
             <!-- Added w-full to main and its child div to constrain content -->
             <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 w-full">
                 <div class="max-w-7xl mx-auto w-full">
@@ -253,9 +265,11 @@
 
                         <!-- Current Rates List -->
                         <div class="bg-white/90 p-6 rounded-2xl shadow-xl">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-lg font-semibold text-gray-800">Current Rates</h3>
-                                <input type="text" id="search-rates" class="block px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500" placeholder="Search party or item...">
+                            <!-- *** SEARCH BOX FIX: This flex container now stacks on mobile (flex-col) and goes side-by-side on sm+ *** -->
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 space-y-3 sm:space-y-0">
+                                <h3 class="text-lg font-semibold text-gray-800 flex-shrink-0">Current Rates</h3>
+                                <!-- *** SEARCH BOX FIX: Input is w-full on mobile and sm:w-auto on larger screens *** -->
+                                <input type="text" id="search-rates" class="block w-full sm:w-auto px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500" placeholder="Search party or item...">
                             </div>
                             <div class="overflow-x-auto">
                                 <table class="min-w-full divide-y divide-gray-200">
@@ -463,11 +477,59 @@
         <div class="bg-white w-full max-w-sm p-6 rounded-2xl shadow-2xl text-center">
             <h3 id="message-title" class="text-xl font-bold text-gray-800 mb-2">Notice</h3>
             <p id="message-body" class="text-gray-600 mb-6"></p>
-            <button id="close-message-btn" class="w-full bg-pink-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-pink-700 transition-all">
-                OK
-            </button>
+            <!-- NEW: Actions container -->
+            <div id="message-modal-actions" class="flex flex-col space-y-2">
+                <!-- Buttons will be injected by JS -->
+                <button id="close-message-btn" class="w-full bg-pink-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-pink-700 transition-all">
+                    OK
+                </button>
+            </div>
         </div>
     </div>
+
+    <!-- NEW: Gemini AI Draft Modal -->
+    <div id="gemini-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white w-full max-w-lg p-6 rounded-2xl shadow-2xl">
+            <!-- Loading State -->
+            <div id="gemini-loading" class="text-center hidden">
+                <div class="w-10 h-10 border-4 border-pink-700 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p class="mt-3 font-semibold text-pink-800">✨ Drafting email...</p>
+            </div>
+
+            <!-- Content State -->
+            <div id="gemini-content" class="hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">✨ AI Notification Draft</h3>
+                    <button id="close-gemini-btn" class="p-2 rounded-full text-gray-500 hover:bg-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="flex justify-between items-center">
+                        <label class="block text-sm font-medium text-gray-700">Subject</label>
+                        <button id="copy-subject-btn" class="text-xs text-pink-600 hover:text-pink-800 font-medium">Copy Subject</button>
+                    </div>
+                    <p id="gemini-subject" class="mt-1 w-full p-2 bg-gray-100 rounded-lg border border-gray-300 text-gray-800 font-semibold"></p>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex justify-between items-center">
+                        <label for="gemini-body" class="block text-sm font-medium text-gray-700">Body</label>
+                         <button id="copy-body-btn" class="text-xs text-pink-600 hover:text-pink-800 font-medium">Copy Body</button>
+                    </div>
+                    <textarea id="gemini-body" rows="10" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500"></textarea>
+                </div>
+
+                <button id="close-gemini-btn-2" class="w-full bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-gray-700 transition-all">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Hidden textarea for clipboard copy -->
+    <textarea id="clipboard-helper" class="absolute -left-full" style="opacity: 0; pointer-events: none;"></textarea>
+
 
     <!-- NEW: Notification Toast -->
     <div id="notification-toast" class="fixed top-5 right-5 w-full max-w-sm bg-white p-4 rounded-xl shadow-2xl border-l-4 border-pink-500 z-50">
@@ -523,6 +585,10 @@
 
         // --- App Constants ---
         const APP_DOMAIN = "oswallumbers.com";
+        // *** ACTION REQUIRED ***
+        // PASTE YOUR GEMINI API KEY HERE
+        const GEMINI_API_KEY = "AIzaSyAFw8hmPdf0TrUYp9E70NO3PsIOLsgp04c"; // <--- PASTE YOUR KEY
+        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -586,6 +652,7 @@
         const messageTitle = document.getElementById('message-title');
         const messageBody = document.getElementById('message-body');
         const closeMessageBtn = document.getElementById('close-message-btn');
+        const messageModalActions = document.getElementById('message-modal-actions'); // NEW
 
         // PIN Page Elements
         const pinSetupForm = document.getElementById('pin-setup-form');
@@ -615,6 +682,18 @@
         const notificationTitle = document.getElementById('notification-title');
         const notificationMessage = document.getElementById('notification-message');
         const closeNotificationBtn = document.getElementById('close-notification-btn');
+
+        // NEW: Gemini Modal Elements
+        const geminiModal = document.getElementById('gemini-modal');
+        const geminiLoading = document.getElementById('gemini-loading');
+        const geminiContent = document.getElementById('gemini-content');
+        const closeGeminiBtn = document.getElementById('close-gemini-btn');
+        const closeGeminiBtn2 = document.getElementById('close-gemini-btn-2');
+        const geminiSubject = document.getElementById('gemini-subject');
+        const geminiBody = document.getElementById('gemini-body');
+        const copySubjectBtn = document.getElementById('copy-subject-btn');
+        const copyBodyBtn = document.getElementById('copy-body-btn');
+        const clipboardHelper = document.getElementById('clipboard-helper');
 
 
         // --- Utility Functions ---
@@ -653,10 +732,35 @@
          * Displays a custom message modal
          * @param {string} title - The title for the modal
          * @param {string} body - The body text for the modal
+         * @param {Array} [actions=null] - Optional array of action objects { text, action, style: 'primary'|'secondary' }
          */
-        function showMessage(title, body) {
+        function showMessage(title, body, actions = null) {
             messageTitle.textContent = title;
             messageBody.textContent = body;
+            
+            // Clear previous actions
+            messageModalActions.innerHTML = '';
+            
+            if (!actions) {
+                // Default action
+                actions = [{ text: "OK", action: hideMessage, style: 'primary' }];
+            }
+
+            actions.forEach(action => {
+                const button = document.createElement('button');
+                button.textContent = action.text;
+                button.onclick = action.action;
+                
+                let classes = 'w-full font-bold py-2 px-4 rounded-lg shadow-lg transition-all';
+                if (action.style === 'secondary') {
+                    classes += ' bg-gray-200 text-gray-800 hover:bg-gray-300';
+                } else {
+                    classes += ' bg-pink-600 text-white hover:bg-pink-700';
+                }
+                button.className = classes;
+                messageModalActions.appendChild(button);
+            });
+
             messageModal.classList.remove('hidden');
         }
 
@@ -734,7 +838,7 @@
         function formatShortDate(timestamp) {
             if (!timestamp) return "N/A";
             const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-            return date.toLocaleDateString('en-US', {
+            return date.toLocale_string('en-US', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit'
@@ -843,8 +947,8 @@
                     currentUserId = user.uid;
                     currentUserEmail = user.email;
 
+                    // *** HEADER FIX: Just set the text. The 'hidden sm:block' classes in HTML will handle visibility ***
                     userEmailDisplay.textContent = currentUserEmail;
-                    userEmailDisplay.classList.remove('hidden');
                     verificationNotice.classList.add('hidden'); // Hide notice, they are verified
 
                     // Now, check for PIN preferences
@@ -886,8 +990,8 @@
                 // User is signed out
                 currentUserId = null;
                 currentUserEmail = null;
+                // *** HEADER FIX: Just clear the text. ***
                 userEmailDisplay.textContent = '';
-                userEmailDisplay.classList.add('hidden');
                 
                 // Detach listeners
                 unsubscribeRates();
@@ -1045,20 +1149,19 @@
 
         // Handle "Forgot PIN" / Logout
         forgetPinBtn.addEventListener('click', async () => {
-            // Replaced confirm() with showMessage and a custom confirm
-            showMessage("Confirm Logout", "Are you sure you want to log out? You will need your email and password to log in again.");
-            
-            // This is a simple implementation. A better one would use a modal with "Yes/No" buttons.
-            // For now, the user must click "OK" then log out from the main screen if they see it.
-            // A more robust way:
-            try {
-                await signOut(auth);
-                hideMessage();
-                // onAuthStateChanged will handle switching to the 'auth' page
-            } catch (error) {
-                console.error("Logout Error:", error);
-                showMessage("Logout Error", error.message);
-            }
+            showMessage("Confirm Logout", "Are you sure you want to log out? You will need your email and password to log in again.", [
+                { text: "Cancel", action: hideMessage, style: 'secondary' },
+                { text: "Log Out", action: async () => {
+                    try {
+                        await signOut(auth);
+                        hideMessage();
+                        // onAuthStateChanged will handle switching to the 'auth' page
+                    } catch (error) {
+                        console.error("Logout Error:", error);
+                        showMessage("Logout Error", error.message);
+                    }
+                }, style: 'primary' }
+            ]);
         });
 
 
@@ -1104,7 +1207,8 @@
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === 'added') {
                         const data = change.doc.data();
-                        const changeTime = data.changedAt.toMillis();
+                        // Check if changedAt exists before calling toMillis
+                        const changeTime = data.changedAt ? data.changedAt.toMillis() : Date.now();
                         const now = Date.now();
                         
                         // If change is new (within 10s) and not by the current user, show notification
@@ -1280,13 +1384,13 @@
 
             // Populate Party Filter
             filterParty.innerHTML = '<option value="">All Parties</option>'; // Reset
-            parties.forEach(party => {
+            [...parties].sort().forEach(party => {
                 filterParty.innerHTML += `<option value="${party}">${party}</option>`;
             });
 
             // Populate Item Filter
             filterItem.innerHTML = '<option value="">All Items</option>'; // Reset
-            items.forEach(item => {
+            [...items].sort().forEach(item => {
                 filterItem.innerHTML += `<option value="${item}">${item}</option>`;
             });
         }
@@ -1342,7 +1446,7 @@
             // Only repopulate if it's empty, to avoid resetting selection
             if (analyticsItemSelect.options.length <= 1) {
                 analyticsItemSelect.innerHTML = '<option value="">Select an item</option>';
-                items.forEach(item => {
+                [...items].sort().forEach(item => {
                     analyticsItemSelect.innerHTML += `<option value="${item}">${item}</option>`;
                 });
             }
@@ -1485,7 +1589,11 @@
 
                 await batch.commit();
                 
-                showMessage("Success", "New rate added successfully.");
+                // NEW: Show message with AI Draft option
+                showMessage("Success", "New rate added successfully.", [
+                    { text: "✨ Draft Notification", action: () => draftNotificationEmail(partyName, itemName, 0, rate), style: 'primary' },
+                    { text: "OK", action: hideMessage, style: 'secondary' }
+                ]);
                 addRateForm.reset();
 
             } catch (error) {
@@ -1568,7 +1676,11 @@
 
                 await batch.commit();
                 
-                showMessage("Success", "Rate updated successfully.");
+                // NEW: Show message with AI Draft option
+                showMessage("Success", "Rate updated successfully.", [
+                    { text: "✨ Draft Notification", action: () => draftNotificationEmail(partyName, itemName, oldRate, newRate), style: 'primary' },
+                    { text: "OK", action: hideMessage, style: 'secondary' }
+                ]);
                 closeEditModal();
 
             } catch (error) {
@@ -1579,6 +1691,160 @@
 
         // Close Message Modal
         closeMessageBtn.addEventListener('click', hideMessage);
+
+        // --- NEW: Gemini API Functions ---
+
+        /**
+         * Copies text to the clipboard.
+         * @param {string} text - The text to copy.
+         */
+        function copyToClipboard(text) {
+            try {
+                clipboardHelper.value = text;
+                clipboardHelper.select();
+                document.execCommand('copy');
+                showNotification("Copied!", "Text copied to clipboard.");
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+                showMessage("Error", "Failed to copy text.");
+            }
+        }
+
+        // Add listeners to Gemini modal copy buttons
+        copySubjectBtn.addEventListener('click', () => copyToClipboard(geminiSubject.textContent));
+        copyBodyBtn.addEventListener('click', () => copyToClipboard(geminiBody.value));
+
+        // Close Gemini Modal
+        function closeGeminiModal() {
+            geminiModal.classList.add('hidden');
+            geminiContent.classList.add('hidden');
+            geminiLoading.classList.add('hidden');
+        }
+        closeGeminiBtn.addEventListener('click', closeGeminiModal);
+        closeGeminiBtn2.addEventListener('click', closeGeminiModal);
+
+        /**
+         * Retries a failed API call with exponential backoff.
+         * @param {Function} fn - The async function to retry.
+         * @param {number} retries - Number of retries.
+         * @param {number} delay - Initial delay in ms.
+         */
+        async function retryWithBackoff(fn, retries = 3, delay = 1000) {
+            try {
+                return await fn();
+            } catch (error) {
+                if (retries > 0) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return retryWithBackoff(fn, retries - 1, delay * 2);
+                } else {
+                    throw error;
+                }
+            }
+        }
+
+        /**
+         * Calls the Gemini API to generate content.
+         * @param {string} systemPrompt - The system-level instructions.
+         * @param {string} userQuery - The user's prompt.
+         * @returns {Promise<string>} - The generated text.
+         */
+        async function callGeminiAPI(systemPrompt, userQuery) {
+            if (!GEMINI_API_KEY || GEMINI_API_KEY === "PASTE_YOUR_API_KEY_HERE") {
+                 throw new Error("Gemini API key is missing. Please add it to the code.");
+            }
+            
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            const fn = async () => {
+                const response = await fetch(GEMINI_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+                return response.json();
+            };
+
+            try {
+                const result = await retryWithBackoff(fn);
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!text) {
+                    throw new Error("Invalid response from API.");
+                }
+                return text;
+            } catch (error) {
+                console.error("Gemini API call failed:", error);
+                throw error;
+            }
+        }
+
+        /**
+         * Generates the prompt and calls the Gemini API to draft an email.
+         * @param {string} partyName
+         * @param {string} itemName
+         * @param {number} oldRate
+         * @param {number} newRate
+         */
+        async function draftNotificationEmail(partyName, itemName, oldRate, newRate) {
+            hideMessage(); // Close the success modal
+            
+            // Show Gemini modal in loading state
+            geminiContent.classList.add('hidden');
+            geminiLoading.classList.remove('hidden');
+            geminiModal.classList.remove('hidden');
+
+            const systemPrompt = `You are a professional business assistant for Oswal Lumbers, a timber and lumber company. Your tone is polite, professional, and concise. Do not use markdown or HTML. Generate a subject line and a body for an email.
+Start the response *immediately* with 'Subject:' followed by the subject line.
+Then, on a *new line*, start the email body.
+Do not include placeholders like '[Your Name]' or '[Client's Name]'. Write the email as if it is from the user, signing off with the user's email: ${currentUserEmail}`;
+
+            let userQuery;
+            if (oldRate === 0) {
+                // New item
+                userQuery = `Draft an email to our client, ${partyName}, introducing a new item we are offering them.
+Item: ${itemName}
+Rate: ${formatCurrency(newRate)}
+Keep it brief and professional.`;
+            } else {
+                // Rate update
+                userQuery = `Draft an email to our client, ${partyName}, about a rate update.
+Item: ${itemName}
+Old Rate: ${formatCurrency(oldRate)}
+New Rate: ${format_currency(newRate)}
+Keep it brief, professional, and state the new rate clearly.`;
+            }
+
+            try {
+                const draft = await callGeminiAPI(systemPrompt, userQuery);
+
+                // Parse the response
+                let subject = "Rate Update Notification"; // Default
+                let body = draft; // Default
+
+                const lines = draft.split('\n');
+                if (lines[0].toLowerCase().startsWith('subject:')) {
+                    subject = lines[0].substring(8).trim();
+                    body = lines.slice(1).join('\n');
+                }
+
+                // Populate and show the modal content
+                geminiSubject.textContent = subject;
+                geminiBody.value = body.trim();
+                geminiLoading.classList.add('hidden');
+                geminiContent.classList.remove('hidden');
+
+            } catch (error) {
+                closeGeminiModal();
+                showMessage("AI Draft Failed", `Could not generate draft: ${error.message}`);
+            }
+        }
         
         // --- Start the App ---
         document.addEventListener('DOMContentLoaded', initialize);
